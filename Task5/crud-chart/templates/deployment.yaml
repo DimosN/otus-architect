@@ -1,7 +1,8 @@
+{{- $fullName := include "crud-chart.fullname" . -}}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "crud-chart.fullname" . }}
+  name: {{ $fullName }}
   labels:
     {{- include "crud-chart.labels" . | nindent 4 }}
 spec:
@@ -31,10 +32,10 @@ spec:
             - name: DATABASE_URI
               valueFrom:
                 secretKeyRef:
-                  name: crud-secret
+                  name: {{ $fullName }}-db-secret
                   key: DATABASE_URI
             - name: API_VERSION
               valueFrom:
                 configMapKeyRef:
-                  name: crud-config
+                  name: {{ $fullName }}
                   key: API_VERSION
