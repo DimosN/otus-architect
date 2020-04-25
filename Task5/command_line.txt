@@ -1,1 +1,5 @@
+# for starting by set of manifests
+kubectl apply -f manifests/postgres.yaml -f manifests/initdb.yaml -f manifests/config.yaml -f 
+manifests/deployment.yaml -f manifests/service.yaml -f manifests/ingress.yaml
+# for starting as Helm application
 helm install myapp ./crud-chart
