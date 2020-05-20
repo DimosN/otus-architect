@@ -1,0 +1,53 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: "{{ .Release.Name }}-stresstest"
+  labels:
+    app.kubernetes.io/managed-by: {{ .Release.Service | quote }}
+    app.kubernetes.io/instance: {{ .Release.Name | quote }}
+    app.kubernetes.io/version: {{ .Chart.AppVersion }}
+    helm.sh/chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+  annotations:
+    # This is what defines this resource as a hook. Without this line, the
+    # job is considered part of the release.
+    "helm.sh/hook": post-install
+    "helm.sh/hook-weight": "-5"
+    "helm.sh/hook-delete-policy": hook-succeeded
+spec:
+  template:
+    metadata:
+      name: "{{ .Release.Name }}-stresstest"
+      labels:
+        app.kubernetes.io/managed-by: {{ .Release.Service | quote }}
+        app.kubernetes.io/instance: {{ .Release.Name | quote }}
+        helm.sh/chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: test-job
+        image: {{ .Values.test.image }}:{{ .Values.test.imageTag }}
+        command:
+          - sh
+          - "-c"
+          - |
+            while true; do
+                {{- range .Values.ingress.hosts }}
+                    {{- $host := .host -}}
+                    {{- range .paths }}
+                        # Get API version
+                        ab -n 10 http://{{ $host }}{{ . }}/api/v1/info;
+                        # Create user
+                        ab -n 10 -p create_request_body.json -T application/json http://{{ $host }}{{ . }}/api/v1/user;
+                        # Get user
+                        ab -n 10 http://{{ $host }}{{ . }}/api/v1/user/1;
+                        # Update user
+                        ab -n 10 -u update_request_body.json -T application/json http://{{ $host }}{{ . }}/api/v1/user/1;
+                        # Delete user
+                        ab -n 10 -m DELETE http://{{ $host }}{{ . }}/api/v1/user/0;
+                    {{- end }}
+                {{- end }}
+                sleep 3;
+            done
+            EOF
+
+  backoffLimit: 0

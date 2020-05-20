@@ -1,0 +1,41 @@
+serviceMonitor:
+  enabled: true
+  
+config:
+  datasource:
+    host: ...
+    user: postgres
+    password: passwd
+    port: ...
+    database: myapp
+    sslmode: disable
+    
+  queries: |-
+    pg_stat_statements:
+      query: "SELECT query, sum(calls) as calls, max(max_time) as max_time, sum(mean_time*calls) / sum(calls) as mean_time FROM pg_stat_statements group by query"
+      metrics:
+        - query:
+            usage: "LABEL"
+            description: "Query class"
+        - calls:
+            usage: "COUNTER"
+            description: "Number of times executed"
+        - max_time:
+            usage: "GAUGE"
+            description: "Maximum time spent in the statement, in milliseconds"
+        - mean_time:
+            usage: "GAUGE"
+            description: "Mean time spent in the statement, in milliseconds"
+            
+    pg_database:
+      query: "SELECT pg_database.datname, pg_database_size(pg_database.datname) as size FROM pg_database"
+      master: true
+      cache_seconds: 30
+      metrics:
+        - datname:
+            usage: "LABEL"
+            description: "Name of the database"
+        - size_bytes:
+            usage: "GAUGE"
+            description: "Disk space used by the database"            
+    
